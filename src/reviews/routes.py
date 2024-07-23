@@ -8,3 +8,5 @@ class ReviewsRoutesPrefixes:
 class ProductReviewRoutesPrefixes(BaseCrudPrefixes):
     add_reply: str = '/{pk}/reply'
 
+class ProductAnalyticsRoutesPrefixes(BaseCrudPrefixes):
+    add_reply: str = '/{pk}/analytics'

@@ -15,10 +15,10 @@ from src.catalogue.routes import (
     CatalogueRoutesPrefixes,
     ProductRoutesPrefixes,
 )
-from src.catalogue.services import get_product_service
+from src.catalogue.services import get_product_service, ProductService
 from src.common.exceptions.base import ObjectDoesNotExistException
 from src.common.schemas.common import ErrorResponse
-
+from src.reviews.services import ProductAnalyticsService
 
 router = APIRouter(prefix=CatalogueRoutesPrefixes.product)
 
@@ -39,7 +39,7 @@ async def product_list(product_service: Annotated[get_product_service, Depends()
 
 
 @router.get(
-    ProductRoutesPrefixes.detail,
+    "/products/detail/{pk}",
     responses={
         status.HTTP_200_OK: {'model': ProductModel},
         status.HTTP_404_NOT_FOUND: {'model': ErrorResponse},
@@ -50,18 +50,17 @@ async def product_list(product_service: Annotated[get_product_service, Depends()
 async def product_detail(
     response: Response,
     pk: int,
-    service: Annotated[get_product_service, Depends()],
-) -> Union[Response, ErrorResponse]:
+    service: ProductService = Depends(get_product_service),
+    analytics_service: ProductAnalyticsService = Depends(),
+) -> Union[ProductModel, ErrorResponse]:
     """
-    Retrieve product.
+    Retrieve product. Records analytics
 
-    Returns:
-        Response with product details.
     """
     try:
-        response = await service.detail(pk=pk)
+        product = await service.detail(pk=pk)
+        await analytics_service.record_visit_product(product_id=pk)
+        return product
     except ObjectDoesNotExistException as exc:
         response.status_code = status.HTTP_404_NOT_FOUND
         return ErrorResponse(message=exc.message)
-
-    return response

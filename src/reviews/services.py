@@ -6,9 +6,9 @@ from src.common.exceptions.base import ObjectDoesNotExistException
 from src.common.service import BaseService
 from src.reviews.models.mongo import (
     ProductReview,
-    Reply,
+    Reply, ProductAnalytics,
 )
-from src.reviews.repositories import ProductReviewRepository
+from src.reviews.repositories import ProductReviewRepository, ProductAnalyticsRepository
 
 
 class ProductReviewService(BaseService):
@@ -44,3 +44,15 @@ class ProductReviewService(BaseService):
         review.replies.append(reply.model_dump())
 
         return await review.save()
+
+class ProductAnalyticsService(BaseService):
+    def __init__(self, repository: ProductAnalyticsRepository = Depends(ProductAnalyticsRepository)):
+        super().__init__(repository=repository)
+
+    async def log_visit_product(self, product_id: int) -> ProductAnalytics:
+        analytics = await self.repository.create_analytics(product_id=product_id)
+        return analytics
+
+def get_product_analytics_service() -> ProductAnalyticsService:
+    repository = ProductAnalyticsRepository()
+    return ProductAnalyticsService(repository=repository)
