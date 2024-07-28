@@ -25,6 +25,54 @@ class Product(SQLModel, table=True):
     stock_records: List["StockRecord"] = Relationship(back_populates="product")
     discounts: List["ProductDiscount"] = Relationship(back_populates="product")
 
+    additional_products_primary: List["AdditionalProducts"] = Relationship(
+        back_populates="primary_product",
+        sa_relationship_kwargs={"foreign_keys": "AdditionalProducts.primary_id"}
+    )
+    additional_products_additional: List["AdditionalProducts"] = Relationship(
+        back_populates="additional_product",
+        sa_relationship_kwargs={"foreign_keys": "AdditionalProducts.additional_id"}
+    )
+    recommended_products_primary: List["RecommendedProducts"] = Relationship(
+        back_populates="primary_product",
+        sa_relationship_kwargs={"foreign_keys": "RecommendedProducts.primary_id"}
+    )
+    recommended_products_recommended: List["RecommendedProducts"] = Relationship(
+        back_populates="recommended_product",
+        sa_relationship_kwargs={"foreign_keys": "RecommendedProducts.recommended_id"}
+    )
+
+class AdditionalProducts(SQLModel, table=True):
+    __tablename__ = 'additional_products'
+
+    primary_id: Optional[int] = Field(foreign_key="products.id", primary_key=True)
+    additional_id: int = Field(foreign_key="products.id", primary_key=True)
+
+    primary_product: Product = Relationship(
+        back_populates="additional_products_primary",
+        sa_relationship_kwargs={"foreign_keys": "AdditionalProducts.primary_id"}
+    )
+    additional_product: Product = Relationship(
+        back_populates="additional_products_additional",
+        sa_relationship_kwargs={"foreign_keys": "AdditionalProducts.additional_id"}
+    )
+
+
+class RecommendedProducts(SQLModel, table=True):
+    __tablename__ = 'recommended_products'
+
+    primary_id: Optional[int] = Field(foreign_key="products.id", primary_key=True)
+    recommended_id: int = Field(foreign_key="products.id", primary_key=True)
+
+    primary_product: Product = Relationship(
+        back_populates="recommended_products_primary",
+        sa_relationship_kwargs={"foreign_keys": "RecommendedProducts.primary_id"}
+    )
+    recommended_product: Product = Relationship(
+        back_populates="recommended_products_recommended",
+        sa_relationship_kwargs={"foreign_keys": "RecommendedProducts.recommended_id"}
+    )
+
 class ProductCategory(SQLModel, table=True):
     __tablename__ = 'product_categories'
 
