@@ -14,9 +14,9 @@ from fastapi import (
 from src.catalogue.models.database import Product
 from src.catalogue.routes import (
     CatalogueRoutesPrefixes,
-    ProductRoutesPrefixes,
+    ProductRoutesPrefixes, CategoryRoutesPrefixes,
 )
-from src.catalogue.services import get_product_service
+from src.catalogue.services import get_product_service, get_category_service
 from src.common.enums import TaskStatus
 from src.common.exceptions.base import ObjectDoesNotExistException
 from src.common.schemas.common import ErrorResponse
@@ -106,5 +106,43 @@ async def update_elastic(
     status_model = await TaskStatusModel(status=TaskStatus.IN_PROGRESS).save_to_redis()
 
     background_tasks.add_task(service.update_search_index, status_model.uuid)
+
+    return await TaskStatusModel().get_from_redis(uuid=status_model.uuid)
+
+
+@router.get(
+    CategoryRoutesPrefixes.search_category,
+    status_code=status.HTTP_200_OK,
+)
+async def search_categories(
+        keyword: str,
+        service: Annotated[get_category_service, Depends()],
+):
+    """
+    Search categories.
+    Returns:
+        Response with categories.
+    """
+    response = await service.search(keyword=keyword)
+
+    return response
+
+
+@router.post(
+    CategoryRoutesPrefixes.update_category_index,
+    status_code=status.HTTP_200_OK,
+)
+async def update_elastic(
+        background_tasks: BackgroundTasks,
+        service: Annotated[get_category_service, Depends()],
+):
+    """
+    Update categories index.
+    Returns:
+        None.
+    """
+    status_model = await TaskStatusModel(status=TaskStatus.IN_PROGRESS).save_to_redis()
+
+    background_tasks.add_task(service.update_category_index, status_model.uuid)
 
     return await TaskStatusModel().get_from_redis(uuid=status_model.uuid)
